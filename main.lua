@@ -21,9 +21,7 @@ local AnswersJson = {}
 if not pcall(function() readfile('themesandanswers.json') end) then
     -- Get config from github
     local json = game:HttpGet('https://raw.githubusercontent.com/notxkid/typeordiescript/main/themesandanswers.json')
-    local encode = game.HttpService:JSONEncode(json)
-    
-    writefile('themesandanswers.json', encode)
+    writefile('themesandanswers.json', json)
 end
 AnswersJson = game:GetService('HttpService'):JSONDecode(readfile('themesandanswers.json'))
 
