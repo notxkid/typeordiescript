@@ -1,19 +1,30 @@
 -- script by xkid#1299 :o
 
-if not readfile then
-    print("yo exploit is ass https://x.synapse.to/")
+local notify = false
+
+function Notify(title,text,duration)
+	if notify then
+		game:GetService("StarterGui"):SetCore("SendNotification", {Title = title;Text = text;Duration = duration;})
+	end
+end
+
+if not readfile or not firesignal then
+    Notify("error", "yo exploit is ass https://x.synapse.to/", 30)
     return
 end
 
 -- vars
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SubmitAnswerRemote = ReplicatedStorage:WaitForChild("SubmitAnswerRemote")
+local textbox = game:GetService("Players").LocalPlayer.PlayerGui:WaitForChild("GameGui").AnswerFrame.TextBox
+local SubmitButton = game:GetService("Players").LocalPlayer.PlayerGui:WaitForChild("GameGui").AnswerFrame.SubmitBtn
+
 local finalAnswer = nil
 local verifiedAnswer = nil
 local currentTheme = nil
 
 local activated = false
-local notify = false
+local isTyped = false
 local delay = 0.1
 
 local AnswersJson = {}
@@ -28,7 +39,16 @@ AnswersJson = game:GetService('HttpService'):JSONDecode(readfile('themesandanswe
 function submitAnswer(theme)
     if verifiedAnswer == nil then verifiedAnswer = '' end
     if finalAnswer == nil then finalAnswer = '' end
+    
+    repeat wait() until isTyped == true
+    firesignal(SubmitButton.MouseButton1Click)
+    
+    --[[
+    
+    ill add incorrect answer checking later.
+    
     if (#finalAnswer > #verifiedAnswer) then
+        repeat wait() until isTyped == true
         local response = SubmitAnswerRemote:InvokeServer(finalAnswer)
         if response == "Incorrect" or response == "RetryIncorrect" then
             SubmitAnswerRemote:InvokeServer(finalAnswer)
@@ -52,6 +72,7 @@ function submitAnswer(theme)
             end
         end
     elseif (#verifiedAnswer >= #finalAnswer) then
+        repeat wait() until isTyped == true
         local response = SubmitAnswerRemote:InvokeServer(verifiedAnswer)
         if response == "Incorrect" or response == "RetryIncorrect" then
             SubmitAnswerRemote:InvokeServer(verifiedAnswer)
@@ -77,7 +98,21 @@ function submitAnswer(theme)
     end
     
     -- save.
-    writefile('themesandanswers.json', game:GetService('HttpService'):JSONEncode(AnswersJson))
+    writefile('themesandanswers.json', game:GetService('HttpService'):JSONEncode(AnswersJson))]]
+end
+
+-- dumb anticheat bypass lmao
+function typeAnswer(answer)
+    spawn(function()
+        if activated then
+            textbox:ReleaseFocus()
+            for i = 1, #answer do
+                task.wait(0.08)
+                textbox.Text = string.sub(answer, 1, i)
+            end
+            isTyped = true
+        end
+    end)
 end
 
 function getAnswer(theme) -- get answers from file
@@ -89,12 +124,6 @@ function getAnswer(theme) -- get answers from file
     return nil
 end
 
-function Notify(title,text,duration)
-	if notify then
-		game:GetService("StarterGui"):SetCore("SendNotification", {Title = title;Text = text;Duration = duration;})
-	end
-end
-
 -- get other players answers (lmao this game is ass)
 ReplicatedStorage.PlayerScoredEvent.OnClientEvent:Connect(function(...)
     local args = {...}
@@ -103,6 +132,9 @@ ReplicatedStorage.PlayerScoredEvent.OnClientEvent:Connect(function(...)
     
     if finalAnswer == nil or length >= #finalAnswer then
         finalAnswer = answer
+        if verifiedAnswer == nil then
+            typeAnswer(finalAnswer)
+        end
         if verifiedAnswer ~= nil then
             if finalAnswer ~= verifiedAnswer and #finalAnswer > #verifiedAnswer then
                 Notify('answer found.', finalAnswer, 10)
@@ -132,10 +164,13 @@ end)
 -- detect when topic changed
 ReplicatedStorage.TopicChangedEvent.OnClientEvent:Connect(function(theme, number)
     finalAnswer = nil
+    isTyped = false
+    
     currentTheme = theme
     verifiedAnswer = getAnswer(theme)
     
     if verifiedAnswer ~= nil then
+        typeAnswer(verifiedAnswer)
         Notify('instant answer found.', verifiedAnswer, 15)
     end
     
@@ -149,11 +184,17 @@ end)
 -- reset when round starts
 ReplicatedStorage.StartRoundEvent.OnClientEvent:Connect(function()
     finalAnswer = nil
+    isTyped = false
 end)
+
+-- no more detecting if focus is lost. (xd fuck you anticheat!)
+for i,v in pairs(getconnections(textbox.FocusLost)) do
+    v:Disable()
+end
 
 -- ui lib stuffs
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("type or die", "Ocean")
+local Window = Library.CreateLib("type or die (FIXED DETECTION)", "Ocean")
 local Tab = Window:NewTab("script by xkid")
 local Section = Tab:NewSection('Main / Autofarm')
 
@@ -166,7 +207,7 @@ Section:NewToggle("notify answer", "send a notification telling you the longest 
 end)
 
 Section:NewKeybind("send longest answer", "bro how do you need further help with this.", Enum.KeyCode.Minus, function()
-	if currentTheme then
+	if currentTheme and isTyped == true then
 	    submitAnswer(currentTheme)
 	end
 end)
