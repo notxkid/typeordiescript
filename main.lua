@@ -17,8 +17,7 @@ end
 
 -- detect updates
 if game.PlaceVersion ~= placeversion then
-    Notify("the game developer updated the game!", "please wait for the script to update!", 30, true)
-    return
+    Notify("the game developer might have updated the game!", "(ignore if in pro server) please autofarm with caution.", 30, true)
 end
 
 -- vars
