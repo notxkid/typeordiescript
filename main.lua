@@ -1,5 +1,5 @@
 -- script by xkid#1299, msg me if you get an error message.
--- Owner if see this plzz unban from discord
+-- do not take ANY of my code without my permission. I most likely will find out if you try to profit off of my code.
 
 local notify = false
 local placeversion = 253
