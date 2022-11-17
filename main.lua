@@ -1,5 +1,6 @@
 -- script by xkid#1299, msg me if you get an error message.
 -- do not take ANY of my code without my permission. I most likely will find out if you try to profit off of my code.
+-- This has been open sourced for the sole purpose of educating new scripters.
 
 local notify = false
 local placeversion = 253
