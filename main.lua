@@ -57,8 +57,8 @@ if not pcall(function() readfile('newthemesandanswers.json') end) then
 end
 AnswersJson = game:GetService('HttpService'):JSONDecode(readfile('newthemesandanswers.json'))
 
-function trim(s)
-    return string.match(s,'^()%s*$') and '' or string.match(s,'^%s*(.*%S)')
+function trim(srng)
+    return string.match(srng,'^()%s*$') and '' or string.match(srng,'^%s*(.*%S)')
 end
 
 function submitAnswer(theme)
