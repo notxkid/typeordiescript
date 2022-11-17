@@ -1,6 +1,7 @@
 -- script by xkid#1299, msg me if you get an error message.
 -- do not take ANY of my code without putting proper credits / telling me first. I most likely will find out if you try to profit off of my code.
 -- This has been open sourced for the sole purpose of educating new scripters.
+-- but, if the moderators patch it again the script will become obfuscated.
 
 local notify = false
 local placeversion = 253
