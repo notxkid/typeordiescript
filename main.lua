@@ -1,23 +1,44 @@
--- script by xkid#1299 :o
+-- script by xkid#1299, msg me if you get an error message.
+-- Owner if see this plzz unban from discord
 
 local notify = false
+local placeversion = 253
 
-function Notify(title,text,duration)
-	if notify then
+function Notify(title,text,duration, important)
+	if notify or important == true then
 		game:GetService("StarterGui"):SetCore("SendNotification", {Title = title;Text = text;Duration = duration;})
 	end
 end
 
 if not readfile or not firesignal then
-    Notify("error", "yo exploit is ass https://x.synapse.to/", 30)
+    Notify("error", "yo exploit is ass https://x.synapse.to/", 30, true)
+    return
+end
+
+-- detect updates
+if game.PlaceVersion ~= placeversion then
+    Notify("the game developer updated the game!", "please wait for the script to update!", 30, true)
     return
 end
 
 -- vars
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SubmitAnswerRemote = ReplicatedStorage:WaitForChild("SubmitAnswerRemote")
-local textbox = game:GetService("Players").LocalPlayer.PlayerGui:WaitForChild("GameGui").AnswerFrame.TextBox
-local SubmitButton = game:GetService("Players").LocalPlayer.PlayerGui:WaitForChild("GameGui").AnswerFrame.SubmitBtn
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local GameGui = LocalPlayer.PlayerGui:WaitForChild("GameGui")
+local textbox = GameGui.AnswerFrame:FindFirstChild("TextBox")
+local SubmitButton = GameGui.AnswerFrame:FindFirstChild("SubmitBtn")
+local questionFrame = GameGui:FindFirstChild("QuestionFrame")
+
+-- checker
+if textbox == nil or SubmitButton == nil or questionFrame == nil then
+    Notify("the game developer temporarily patched", "wait for the script to update or smth", 30, true)
+    return
+end
+
+Notify("Warning", "It is reccomended that you use the script on an alt account!", 10, true)
 
 local finalAnswer = nil
 local verifiedAnswer = nil
@@ -29,12 +50,16 @@ local delay = 0.1
 
 local AnswersJson = {}
 
-if not pcall(function() readfile('themesandanswers.json') end) then
+if not pcall(function() readfile('newthemesandanswers.json') end) then
     -- Get config from github
     local json = game:HttpGet('https://raw.githubusercontent.com/notxkid/typeordiescript/main/themesandanswers.json')
-    writefile('themesandanswers.json', json)
+    writefile('newthemesandanswers.json', json)
 end
-AnswersJson = game:GetService('HttpService'):JSONDecode(readfile('themesandanswers.json'))
+AnswersJson = game:GetService('HttpService'):JSONDecode(readfile('newthemesandanswers.json'))
+
+function trim(s)
+    return string.match(s,'^()%s*$') and '' or string.match(s,'^%s*(.*%S)')
+end
 
 function submitAnswer(theme)
     if verifiedAnswer == nil then verifiedAnswer = '' end
@@ -42,70 +67,12 @@ function submitAnswer(theme)
     
     repeat wait() until isTyped == true
     firesignal(SubmitButton.MouseButton1Click)
-    
-    --[[
-    
-    ill add incorrect answer checking later.
-    
-    if (#finalAnswer > #verifiedAnswer) then
-        repeat wait() until isTyped == true
-        local response = SubmitAnswerRemote:InvokeServer(finalAnswer)
-        if response == "Incorrect" or response == "RetryIncorrect" then
-            SubmitAnswerRemote:InvokeServer(finalAnswer)
-            -- incorrect XD
-            for i,v in pairs(AnswersJson.Main) do
-                if theme == i then
-                    table.remove(AnswersJson.Main, i)
-                end
-            end
-        else
-            if not AnswersJson.Main[theme] then
-                AnswersJson.Main[theme] = finalAnswer
-            else
-            for i,v in pairs(AnswersJson.Main) do
-                    if theme == i then
-                        if #finalAnswer > #v then
-                            AnswersJson.Main[theme] = finalAnswer
-                        end
-                    end
-                end
-            end
-        end
-    elseif (#verifiedAnswer >= #finalAnswer) then
-        repeat wait() until isTyped == true
-        local response = SubmitAnswerRemote:InvokeServer(verifiedAnswer)
-        if response == "Incorrect" or response == "RetryIncorrect" then
-            SubmitAnswerRemote:InvokeServer(verifiedAnswer)
-            -- incorrect XD
-            for i,v in pairs(AnswersJson.Main) do
-                if theme == i then
-                    table.remove(AnswersJson.Main, i)
-                end
-            end
-        else
-            if not AnswersJson.Main[theme] then
-                AnswersJson.Main[theme] = verifiedAnswer
-            else
-            for i,v in pairs(AnswersJson.Main) do
-                    if theme == i then
-                        if #verifiedAnswer > #v then
-                            AnswersJson.Main[theme] = verifiedAnswer
-                        end
-                    end
-                end
-            end
-        end
-    end
-    
-    -- save.
-    writefile('themesandanswers.json', game:GetService('HttpService'):JSONEncode(AnswersJson))]]
 end
 
 -- dumb anticheat bypass lmao
 function typeAnswer(answer)
     spawn(function()
         if activated then
-            textbox:ReleaseFocus()
             for i = 1, #answer do
                 task.wait(0.08)
                 textbox.Text = string.sub(answer, 1, i)
@@ -124,11 +91,25 @@ function getAnswer(theme) -- get answers from file
     return nil
 end
 
--- get other players answers (lmao this game is ass)
+function validate(id)
+    if id == -1 then return false end
+    local Player = Players:GetPlayerByUserId(id)
+    if Player then
+        return true
+    end
+    return false
+end
+
+-- Hello game develoepr
 ReplicatedStorage.PlayerScoredEvent.OnClientEvent:Connect(function(...)
     local args = {...}
+    local userId = args[1]
     local length = args[2]
     local answer = args[3]
+    
+    if validate(userId) == false or trim(answer) == '' then
+        return
+    end
     
     if finalAnswer == nil or length >= #finalAnswer then
         finalAnswer = answer
@@ -136,10 +117,10 @@ ReplicatedStorage.PlayerScoredEvent.OnClientEvent:Connect(function(...)
             typeAnswer(finalAnswer)
         end
         if verifiedAnswer ~= nil then
-            if finalAnswer ~= verifiedAnswer and #finalAnswer > #verifiedAnswer then
+            if finalAnswer ~= verifiedAnswer and #finalAnswer > #verifiedAnswer and finalAnswer ~= '' then
                 Notify('answer found.', finalAnswer, 10)
             end
-        elseif verifiedAnswer ~= nil and finalAnswer ~= verifiedAnswer and #finalAnswer > #verifiedAnswer then
+        elseif verifiedAnswer ~= nil and finalAnswer ~= verifiedAnswer and #finalAnswer > #verifiedAnswer and finalAnswer ~= '' then
             Notify('answer found.', finalAnswer, 10)
         end
     end
@@ -157,18 +138,20 @@ ReplicatedStorage.PlayerScoredEvent.OnClientEvent:Connect(function(...)
             end
         end
     end
-    writefile('themesandanswers.json', game:GetService('HttpService'):JSONEncode(AnswersJson))
+    writefile('newthemesandanswers.json', game:GetService('HttpService'):JSONEncode(AnswersJson))
 end)
 
 
 -- detect when topic changed
 ReplicatedStorage.TopicChangedEvent.OnClientEvent:Connect(function(theme, number)
     finalAnswer = nil
+    currentTheme = nil
     isTyped = false
     
-    currentTheme = theme
-    verifiedAnswer = getAnswer(theme)
+    repeat wait() until currentTheme ~= nil
+    theme = currentTheme
     
+    verifiedAnswer = getAnswer(theme)
     if verifiedAnswer ~= nil then
         typeAnswer(verifiedAnswer)
         Notify('instant answer found.', verifiedAnswer, 15)
@@ -187,14 +170,29 @@ ReplicatedStorage.StartRoundEvent.OnClientEvent:Connect(function()
     isTyped = false
 end)
 
--- no more detecting if focus is lost. (xd fuck you anticheat!)
+-- bypass
 for i,v in pairs(getconnections(textbox.FocusLost)) do
     v:Disable()
 end
 
+textbox.Focused:Connect(function()
+    if activated then
+        task.wait()
+        textbox:ReleaseFocus()
+    end
+end)
+
+-- Detect text change
+questionFrame.TextLabel:GetPropertyChangedSignal("Text"):Connect(function()
+    local text = questionFrame:FindFirstChildWhichIsA("TextLabel").Text
+    if trim(text) ~= '' then
+        currentTheme = trim(text)
+    end
+end)
+
 -- ui lib stuffs
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("type or die (FIXED DETECTION)", "Ocean")
+local Window = Library.CreateLib("type or die (fixed!)", "Ocean")
 local Tab = Window:NewTab("script by xkid")
 local Section = Tab:NewSection('Main / Autofarm')
 
@@ -212,11 +210,11 @@ Section:NewKeybind("send longest answer", "bro how do you need further help with
 	end
 end)
 
-Section:NewSlider("end delay", "1 is 100 ms, so 10 = 1 second.", 100, 1, function(s)
+Section:NewSlider("end delay", "1 is 100 ms, so 10 = 1 second.", 150, 1, function(s)
     delay = s / 10
 end)
 
 -- loop
 while wait(10) do
-    writefile('themesandanswers.json', game:GetService('HttpService'):JSONEncode(AnswersJson))
+    writefile('newthemesandanswers.json', game:GetService('HttpService'):JSONEncode(AnswersJson))
 end
